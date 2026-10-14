@@ -6,6 +6,7 @@ let authToken = null;
 let currentFighter = null;
 let battleState = null;
 let audioEnabled = false;
+let demoMode = false; // Set to true for demo without API key
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -14,6 +15,50 @@ function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
 function setText(el, text) { el.textContent = text; }
 function setHTML(el, html) { el.innerHTML = html; }
+
+// Demo fighter data (no API needed)
+const DEMO_FIGHTERS = [
+    {
+        name: "Neon Ronin",
+        title: "Cybernetic Samurai",
+        appearance: "A cybernetic samurai with neon katana, chrome armor glowing with electric blue circuits, fighting stance in rain-slicked neon alley",
+        style: "Precision strikes with ionized blade, deflects attacks with magnetic field",
+        abilities: ["Ion Blade", "Magnetic Deflect", "Phase Shift"],
+        personality: "Honor-bound warrior seeking redemption in a corrupt megacity",
+        hp: 100, attack: 18, defense: 12, speed: 15
+    },
+    {
+        name: "Void Walker",
+        title: "Dimensional Drifter",
+        appearance: "Ethereal figure wreathed in purple void energy, tattered cloak shifting between realities, twin daggers of folded space",
+        style: "Teleports between dimensions, strikes from impossible angles",
+        abilities: ["Void Step", "Reality Tear", "Entropy Touch"],
+        personality: "Mysterious wanderer unbound by time or space",
+        hp: 90, attack: 22, defense: 8, speed: 20
+    },
+    {
+        name: "Inferno Titan",
+        title: "Living Wildfire",
+        appearance: "Massive being of living magma and obsidian, crown of eternal flame, each step scorches the earth",
+        style: "Overwhelming fire AoE, creates lava pools, explodes on critical hits",
+        abilities: ["Magma Surge", "Ash Cloud", "Supernova"],
+        personality: "Ancient force of destruction, speaks in crackling embers",
+        hp: 140, attack: 15, defense: 15, speed: 8
+    },
+    {
+        name: "Frost Weaver",
+        title: "Winter's Architect",
+        appearance: "Elegant figure of crystalline ice, gown of snowflakes, staff topped with perpetual blizzard",
+        style: "Controls battlefield with ice walls, freezes enemies, shatters frozen foes",
+        abilities: ["Glacial Prison", "Permafrost", "Absolute Zero"],
+        personality: "Cold precision, calculates every outcome like a grandmaster",
+        hp: 95, attack: 16, defense: 14, speed: 11
+    }
+];
+
+function getRandomDemoFighter() {
+    return DEMO_FIGHTERS[Math.floor(Math.random() * DEMO_FIGHTERS.length)];
+}
 
 // Pollinations API calls
 async function pollinationsRequest(endpoint, body, useAuth = false) {
@@ -35,6 +80,13 @@ async function pollinationsRequest(endpoint, body, useAuth = false) {
 
 // Generate fighter description from prompt
 async function generateFighter(prompt) {
+    if (demoMode) {
+        // Simulate API delay
+        await new Promise(r => setTimeout(r, 1500));
+        const fighter = getRandomDemoFighter();
+        // Customize based on prompt
+        return { ...fighter, name: prompt.split(' ').slice(0,2).map(w => w[0].toUpperCase() + w.slice(1)).join(' ') + ' ' + fighter.name };
+    }
     const resp = await pollinationsRequest('/v1/chat/completions', {
         model: 'openai/gpt-5.4-nano',
         messages: [{
@@ -66,6 +118,16 @@ Keep it balanced for fair battles.`
 
 // Generate fighter image
 async function generateImage(prompt) {
+    if (demoMode) {
+        // Return a placeholder SVG
+        return `data:image/svg+xml,${encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+                <rect width="400" height="400" fill="#1a1a2e"/>
+                <text x="200" y="200" text-anchor="middle" fill="#ffd93d" font-family="sans-serif" font-size="24">Demo Fighter Art</text>
+                <text x="200" y="240" text-anchor="middle" fill="#888" font-family="sans-serif" font-size="14">Demo Mode — Connect for real art</text>
+            </svg>
+        `)}`;
+    }
     const encoded = encodeURIComponent(prompt);
     const url = `${POLLINATIONS_API}/image/${encoded}?model=black-forest-labs/flux.1-schnell&key=${authToken || ''}`;
     return url;
@@ -73,6 +135,16 @@ async function generateImage(prompt) {
 
 // Generate audio commentary
 async function generateAudio(text) {
+    if (demoMode) {
+        // Use Web Speech API for demo
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            speechSynthesis.speak(utterance);
+        }
+        return null;
+    }
     const encoded = encodeURIComponent(text);
     const url = `${POLLINATIONS_API}/audio/${encoded}?model=openai/tts-1&voice=onyx&key=${authToken || ''}`;
     const resp = await fetch(url);
@@ -82,6 +154,10 @@ async function generateAudio(text) {
 
 // Generate challenger
 async function generateChallenger() {
+    if (demoMode) {
+        await new Promise(r => setTimeout(r, 800));
+        return getRandomDemoFighter();
+    }
     const archetypes = [
         'A hulking golem made of ancient stone and moss',
         'A swift shadow assassin with twin daggers',
@@ -108,13 +184,9 @@ function simulateBattle(player, enemy) {
         eHp = Math.max(0, eHp - pDmg);
         log.push({ type: 'player-action', text: `${player.name} strikes ${enemy.name} for ${pDmg} damage!` });
         
-        // Commentary
         const commentaries = [
-            'A devastating blow!',
-            'The crowd roars!',
-            'What precision!',
-            'Steel meets steel!',
-            'The arena trembles!'
+            'A devastating blow!', 'The crowd roars!', 'What precision!',
+            'Steel meets steel!', 'The arena trembles!'
         ];
         log.push({ type: 'commentary', text: commentaries[Math.floor(Math.random() * commentaries.length)] });
         
@@ -190,8 +262,10 @@ async function playAudio(text) {
     if (!audioEnabled) return;
     try {
         const url = await generateAudio(text);
-        const audio = new Audio(url);
-        await audio.play();
+        if (url && url !== 'demo') {
+            const audio = new Audio(url);
+            await audio.play();
+        }
     } catch (e) {
         console.warn('Audio failed:', e);
     }
@@ -199,24 +273,28 @@ async function playAudio(text) {
 
 // Event Handlers
 $('#btn-connect').onclick = async () => {
-    // Use Pollinations device flow or direct auth
-    // For simplicity, we'll use the app's BYOP flow
-    const clientId = 'pk_tiny-fighter-arena'; // Would need real app key
+    const clientId = 'pk_tiny-fighter-arena'; // Replace with real App Key
     window.location.href = `https://enter.pollinations.ai/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.href)}&scope=usage&models=text,image,audio&budget=5&expiry=7`;
 };
 
-// Check for auth token in URL (BYOP flow)
 function checkAuth() {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const token = params.get('api_key') || params.get('access_token');
     if (token) {
         authToken = token;
-        logAuthStatus('✅ Connected to Pollinations! You can now generate fighters.');
+        logAuthStatus('Connected to Pollinations! Real generation enabled.');
         hide($('#auth-section'));
         show($('#create-section'));
         $('#btn-generate').disabled = false;
-        // Clean URL
         history.replaceState(null, '', window.location.pathname);
+    } else {
+        // No auth - enable demo mode automatically
+        demoMode = true;
+        logAuthStatus('Demo mode active — create fighters without API key! (Connect for real generation)', false);
+        hide($('#auth-section'));
+        show($('#create-section'));
+        $('#btn-generate').disabled = false;
+        show($('#demo-notice'));
     }
 }
 
@@ -225,32 +303,28 @@ $('#btn-generate').onclick = async () => {
     if (!prompt) return logGenerateStatus('Enter a fighter description!', true);
     
     $('#btn-generate').disabled = true;
-    logGenerateStatus('🎨 Designing your fighter...');
+    logGenerateStatus('Designing your fighter...');
     
     try {
-        // Generate fighter data
         const fighter = await generateFighter(prompt);
-        logGenerateStatus('🎨 Fighter designed! Generating art...');
+        logGenerateStatus('Fighter designed! Generating art...');
         
-        // Generate image if checked
-        if ($('#chk-image').checked && authToken) {
-            const imgUrl = await generateImage(fighter.appearance);
-            $('#fighter-image').src = imgUrl;
-            show($('#fighter-image'));
-        }
+        // Always show demo image or real image
+        const imgUrl = await generateImage(fighter.appearance);
+        $('#fighter-image').src = imgUrl;
+        show($('#fighter-image'));
         
-        // Generate voice intro if checked
-        if ($('#chk-voice').checked && authToken) {
-            logGenerateStatus('🎙️ Generating voice intro...');
+        if ($('#chk-voice').checked) {
+            logGenerateStatus('Generating voice intro...');
             await playAudio(`Behold! ${fighter.name}, ${fighter.title}! ${fighter.style}`);
         }
         
         displayFighter(fighter);
         hide($('#create-section'));
-        logGenerateStatus('✅ Fighter ready for battle!');
+        logGenerateStatus('Fighter ready for battle!');
         
     } catch (e) {
-        logGenerateStatus(`❌ Error: ${e.message}`, true);
+        logGenerateStatus(`Error: ${e.message}`, true);
     } finally {
         $('#btn-generate').disabled = false;
     }
@@ -258,9 +332,9 @@ $('#btn-generate').onclick = async () => {
 
 $('#btn-battle').onclick = async () => {
     hide($('#fighter-display'));
-    show($('#battle-section');
+    show($('#battle-section'));
     
-    logAuthStatus('⚔️ Summoning a challenger...');
+    logAuthStatus('Summoning a challenger...');
     
     try {
         const enemy = await generateChallenger();
@@ -278,10 +352,10 @@ $('#btn-battle').onclick = async () => {
         }
         
         $('#btn-next-turn').disabled = false;
-        logAuthStatus('🎮 Battle ready! Click Next Turn.');
+        logAuthStatus('Battle ready! Click Next Turn.');
         
     } catch (e) {
-        logAuthStatus(`❌ Error: ${e.message}`, true);
+        logAuthStatus(`Error: ${e.message}`, true);
     }
 };
 
@@ -292,7 +366,6 @@ $('#btn-next-turn').onclick = async () => {
     if (!battleState) return;
     
     if (battleIndex === 0) {
-        // First click - run full simulation
         const result = simulateBattle(battleState.player, battleState.enemy);
         battleLog = result.log;
         battleState.result = result;
@@ -302,11 +375,6 @@ $('#btn-next-turn').onclick = async () => {
     if (battleIndex < battleLog.length) {
         const entry = battleLog[battleIndex];
         addBattleLog(entry);
-        
-        if (entry.type === 'player-action' || entry.type === 'enemy-action') {
-            // Update HP based on cumulative damage
-            // Simplified - just show final at end
-        }
         
         if (audioEnabled && entry.type === 'commentary') {
             await playAudio(entry.text);
