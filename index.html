@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Fighter Arena</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ Tiny Fighter Arena</h1>
+            <p class="tagline">Describe a fighter. Watch them battle.</p>
+        </header>
+        
+        <div id="auth-section" class="section">
+            <h2>🔐 Connect Your Pollen</h2>
+            <p>Sign in with Pollinations to pay for AI generations with your own Pollen.</p>
+            <button id="btn-connect" class="btn btn-primary">Connect Pollinations</button>
+            <div id="auth-status" class="hidden"></div>
+        </div>
+
+        <div id="create-section" class="section hidden">
+            <h2>🎨 Create Your Fighter</h2>
+            <textarea id="fighter-input" placeholder="A cybernetic samurai with neon katana, fights with honor and precision" rows="3"></textarea>
+            <div class="options">
+                <label><input type="checkbox" id="chk-voice"> Generate voice commentary</label>
+                <label><input type="checkbox" id="chk-image" checked> Generate fighter art</label>
+            </div>
+            <button id="btn-generate" class="btn btn-primary" disabled>Generate Fighter</button>
+            <div id="generate-status" class="hidden"></div>
+        </div>
+
+        <div id="fighter-display" class="section hidden">
+            <h2>⚔️ Your Fighter</h2>
+            <div class="fighter-card">
+                <img id="fighter-image" src="" alt="Fighter art" class="hidden">
+                <div id="fighter-text"></div>
+            </div>
+            <button id="btn-battle" class="btn btn-secondary">Enter Battle</button>
+        </div>
+
+        <div id="battle-section" class="section hidden">
+            <h2>🏟️ Battle Arena</h2>
+            <div class="battle-ui">
+                <div class="combatant player">
+                    <h3>Your Fighter</h3>
+                    <div id="player-hp" class="hp-bar"><div class="hp-fill"></div></div>
+                    <div id="player-name"></div>
+                </div>
+                <div class="vs">VS</div>
+                <div class="combatant enemy">
+                    <h3>Challenger</h3>
+                    <div id="enemy-hp" class="hp-bar"><div class="hp-fill"></div></div>
+                    <div id="enemy-name"></div>
+                </div>
+            </div>
+            <div id="battle-log" class="battle-log"></div>
+            <div class="battle-controls">
+                <button id="btn-next-turn" class="btn btn-primary" disabled>Next Turn</button>
+                <button id="btn-auto" class="btn btn-secondary">Auto Battle</button>
+                <button id="btn-new-fighter" class="btn btn-secondary">New Fighter</button>
+            </div>
+        </div>
+
+        <div id="share-section" class="section hidden">
+            <h2>📤 Share Your Battle</h2>
+            <input type="text" id="share-url" readonly>
+            <button id="btn-copy" class="btn btn-secondary">Copy Link</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

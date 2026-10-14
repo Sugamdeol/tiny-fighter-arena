@@ -1,0 +1,12 @@
+{
+  "name": "tiny-fighter-arena",
+  "version": "1.0.0",
+  "description": "Tiny Fighter Arena - Pollinations QUEST #17250",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -l 3000"
+  },
+  "keywords": ["pollinations", "quest", "game", "ai", "browser-game"],
+  "author": "Sugamdeol",
+  "license": "MIT"
+}
