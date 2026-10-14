@@ -272,29 +272,43 @@ async function playAudio(text) {
 }
 
 // Event Handlers
+const APP_KEY = 'pk_xAZVM7jPRL8AZaAz'; // Real App Key (registered redirect: https://sugamdeol.github.io/tiny-fighter-arena/)
+const REDIRECT_URI = 'https://sugamdeol.github.io/tiny-fighter-arena/'; // Must exactly match registered URI
+
 $('#btn-connect').onclick = async () => {
-    const clientId = 'pk_xAZVM7jPRL8AZaAz'; // Real App Key from user
-    window.location.href = `https://enter.pollinations.ai/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.href)}&scope=usage&models=text,image,audio&budget=5&expiry=7`;
+    window.location.href = `https://enter.pollinations.ai/authorize?client_id=${APP_KEY}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=usage&models=text,image,audio&budget=5&expiry=7`;
 };
 
 function checkAuth() {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const token = params.get('api_key') || params.get('access_token');
     if (token) {
+        // BYOP auth success — real generation mode
         authToken = token;
-        logAuthStatus('Connected to Pollinations! Real generation enabled.');
+        demoMode = false;
+        hide($('#demo-notice'));
         hide($('#auth-section'));
         show($('#create-section'));
         $('#btn-generate').disabled = false;
         history.replaceState(null, '', window.location.pathname);
+        logGenerateStatus('Connected to Pollinations! AI generation enabled.');
     } else {
-        // No auth - enable demo mode automatically
+        // No auth — demo mode, but keep Connect button visible
         demoMode = true;
-        logAuthStatus('Demo mode active — create fighters without API key! (Connect for real generation)', false);
-        hide($('#auth-section'));
         show($('#create-section'));
         $('#btn-generate').disabled = false;
         show($('#demo-notice'));
+        // Update auth section instead of hiding it
+        setHTML($('#auth-section'), `
+            <h2>🔐 Connect Your Pollen</h2>
+            <p>Playing in demo mode. Connect your Pollinations account for real AI-generated fighters, art and voice commentary.</p>
+            <button id="btn-connect" class="btn btn-primary">Connect Pollinations</button>
+            <div id="auth-status" class="hidden"></div>
+        `);
+        // Re-bind the connect button (innerHTML replaced it)
+        $('#btn-connect').onclick = async () => {
+            window.location.href = `https://enter.pollinations.ai/authorize?client_id=${APP_KEY}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=usage&models=text,image,audio&budget=5&expiry=7`;
+        };
     }
 }
 
@@ -339,8 +353,6 @@ $('#btn-battle').onclick = async () => {
     try {
         const enemy = await generateChallenger();
         battleState = { player: currentFighter, enemy, turn: 0 };
-        battleLog = [];
-        battleIndex = 0;
         
         setPlayerInfo(currentFighter);
         setEnemyInfo(enemy);
@@ -401,42 +413,12 @@ $('#btn-next-turn').onclick = async () => {
 };
 
 $('#btn-auto').onclick = async () => {
-    if (!battleState) return;
     $('#btn-next-turn').disabled = true;
     $('#btn-auto').disabled = true;
     
-    // First turn: populate battleLog if empty (same as btn-next-turn first click)
-    if (battleLog.length === 0) {
-        const result = simulateBattle(battleState.player, battleState.enemy);
-        battleLog = result.log;
-        battleState.result = result;
-        battleIndex = 0;
-    }
-    
     while (battleIndex < battleLog.length) {
-        const entry = battleLog[battleIndex];
-        addBattleLog(entry);
-        
-        if (audioEnabled && entry.type === 'commentary') {
-            await playAudio(entry.text);
-        }
-        
-        battleIndex++;
+        $('#btn-next-turn').click();
         await new Promise(r => setTimeout(r, 800));
-    }
-    
-    if (battleIndex >= battleLog.length) {
-        $('#btn-next-turn').disabled = true;
-        const result = battleState.result;
-        addBattleLog({ type: 'commentary', text: `🏆 ${result.winner} wins! Final HP: You ${result.playerHp} vs ${result.enemyHp}` });
-        
-        if (audioEnabled) {
-            await playAudio(`${result.winner} is victorious!`);
-        }
-        
-        show($('#share-section'));
-        const shareUrl = `${window.location.origin}${window.location.pathname}?battle=${btoa(JSON.stringify(battleState))}`;
-        $('#share-url').value = shareUrl;
     }
     $('#btn-auto').disabled = false;
 };
