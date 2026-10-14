@@ -339,6 +339,8 @@ $('#btn-battle').onclick = async () => {
     try {
         const enemy = await generateChallenger();
         battleState = { player: currentFighter, enemy, turn: 0 };
+        battleLog = [];
+        battleIndex = 0;
         
         setPlayerInfo(currentFighter);
         setEnemyInfo(enemy);
