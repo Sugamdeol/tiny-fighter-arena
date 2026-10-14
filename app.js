@@ -399,12 +399,42 @@ $('#btn-next-turn').onclick = async () => {
 };
 
 $('#btn-auto').onclick = async () => {
+    if (!battleState) return;
     $('#btn-next-turn').disabled = true;
     $('#btn-auto').disabled = true;
     
+    // First turn: populate battleLog if empty (same as btn-next-turn first click)
+    if (battleLog.length === 0) {
+        const result = simulateBattle(battleState.player, battleState.enemy);
+        battleLog = result.log;
+        battleState.result = result;
+        battleIndex = 0;
+    }
+    
     while (battleIndex < battleLog.length) {
-        $('#btn-next-turn').click();
+        const entry = battleLog[battleIndex];
+        addBattleLog(entry);
+        
+        if (audioEnabled && entry.type === 'commentary') {
+            await playAudio(entry.text);
+        }
+        
+        battleIndex++;
         await new Promise(r => setTimeout(r, 800));
+    }
+    
+    if (battleIndex >= battleLog.length) {
+        $('#btn-next-turn').disabled = true;
+        const result = battleState.result;
+        addBattleLog({ type: 'commentary', text: `🏆 ${result.winner} wins! Final HP: You ${result.playerHp} vs ${result.enemyHp}` });
+        
+        if (audioEnabled) {
+            await playAudio(`${result.winner} is victorious!`);
+        }
+        
+        show($('#share-section'));
+        const shareUrl = `${window.location.origin}${window.location.pathname}?battle=${btoa(JSON.stringify(battleState))}`;
+        $('#share-url').value = shareUrl;
     }
     $('#btn-auto').disabled = false;
 };
