@@ -22,7 +22,7 @@ textarea:focus { outline: none; border-color: #e94560; box-shadow: 0 0 0 3px rgb
 .combatant { flex: 1; min-width: 150px; text-align: center; }
 .combatant h3 { color: #ffd93d; margin-bottom: 8px; }
 .hp-bar { height: 20px; background: #0f3460; border-radius: 10px; overflow: hidden; border: 1px solid #ffd93d; }
-.hp-fill { height: 100%; background: linear-gradient(90deg, #6bcb77, #4ecdc4); transition: width 0.3s; }
+.hp-fill { height: 100%; background: linear-gradient(90deg, #6bcb77, #4ecdc4); transition: width 0.3s; color: #fff; font-size: 0.8rem; font-weight: bold; text-align: center; line-height: 20px; overflow: hidden; white-space: nowrap; }
 .vs { font-size: 1.5rem; font-weight: bold; color: #e94560; text-shadow: 0 0 10px rgba(233,69,96,0.5); }
 .battle-log { background: #0f3460; border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; line-height: 1.6; }
 .battle-log .turn { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,217,61,0.2); }
