@@ -273,7 +273,7 @@ async function playAudio(text) {
 
 // Event Handlers
 $('#btn-connect').onclick = async () => {
-    const clientId = 'pk_tiny-fighter-arena'; // Replace with real App Key
+    const clientId = 'pk_xAZVM7jPRL8AZaAz'; // Real App Key from user
     window.location.href = `https://enter.pollinations.ai/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.href)}&scope=usage&models=text,image,audio&budget=5&expiry=7`;
 };
 
